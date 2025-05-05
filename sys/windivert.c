@@ -5284,7 +5284,7 @@ static void windivert_inject_packet_too_big(packet_t packet)
             UINT32_MAX
     };
     PWINDIVERT_IPHDR ip_header, ip_header_2;
-    PWINDIVERT_IPV6HDR ipv6_header, ipv6_header_2;
+    PWINDIVERT_IPV6HDR ipv6_header = NULL, ipv6_header_2 = NULL;
     PWINDIVERT_ICMPHDR icmp_header;
     PWINDIVERT_ICMPV6HDR icmpv6_header;
     packet_t icmp;

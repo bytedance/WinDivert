@@ -1,0 +1,46 @@
+;*** WinDivert.ddf
+;
+.OPTION EXPLICIT     ; Generate errors
+.Set CabinetFileCountThreshold=0
+.Set FolderFileCountThreshold=0
+.Set FolderSizeThreshold=0
+.Set MaxCabinetSize=0
+.Set MaxDiskFileCount=0
+.Set MaxDiskSize=0
+.Set CompressionType=MSZIP
+.Set Cabinet=on
+.Set Compress=on
+
+;
+; Specify file name for new cab file
+.Set CabinetNameTemplate=WinDivert.cab
+;.Set DiskDirectoryTemplate=%DiskDirectoryTemplate%
+;.Set SourceDir=%SourceDir%
+
+;
+; Specify the subdirectory for the files.  
+; Your cab file should not have files at the root level,
+; and each driver package must be in a separate subfolder.
+.Set DestinationDir=WinDivert32
+;
+; Specify files to be included in cab file
+MSVC\i386\WinDivert\WinDivert32.sys
+MSVC\i386\WinDivert\windivert32.inf
+MSVC\i386\WinDivert\windivert32.cat
+
+.Set DestinationDir=WinDivert32\symbols\x86
+MSVC\i386\WinDivert32.pdb
+
+;
+; Specify the subdirectory for the files.  
+; Your cab file should not have files at the root level,
+; and each driver package must be in a separate subfolder.
+.Set DestinationDir=WinDivert64
+;
+; Specify files to be included in cab file
+MSVC\amd64\WinDivert\WinDivert64.sys
+MSVC\amd64\WinDivert\windivert64.inf
+MSVC\amd64\WinDivert\windivert64.cat
+
+.Set DestinationDir=WinDivert64\symbols\x64
+MSVC\amd64\WinDivert64.pdb

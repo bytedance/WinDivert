@@ -233,6 +233,16 @@ WINDIVERTEXPORT HANDLE WinDivertOpen(
     __in        UINT64 flags);
 
 /*
+ * Open a WinDivert handle.
+ */
+WINDIVERTEXPORT HANDLE WinDivertOpenEx(
+    __in        wchar_t *service_name,
+    __in        const char *filter,
+    __in        WINDIVERT_LAYER layer,
+    __in        INT16 priority,
+    __in        UINT64 flags);
+
+/*
  * Receive (read) a packet from a WinDivert handle.
  */
 WINDIVERTEXPORT BOOL WinDivertRecv(
