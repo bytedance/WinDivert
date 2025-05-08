@@ -948,6 +948,30 @@ static VOID windivert_free(PVOID ptr)
     }
 }
 
+// Function: Extract Service Name from Registry Path (e.g., "\REGISTRY\MACHINE\SYSTEM\ControlSet001\Services\WinDivert")
+static NTSTATUS windivert_get_service_name_from_registry_path(PUNICODE_STRING reg_path, PUNICODE_STRING out_service_name) {
+	if (!reg_path || !out_service_name) {
+		return STATUS_INVALID_PARAMETER;
+	}
+
+	// Find the last backslash ('\\') in the reg_path string to locate Service Name.
+	PWSTR last_backslash = wcsrchr(reg_path->Buffer, L'\\');
+	if (!last_backslash) {
+        DEBUG("Invalid registry path format: %S", reg_path->Buffer);
+		return STATUS_UNSUCCESSFUL;
+	}
+
+	// Skip the backslash to get Service Name.
+	PWSTR service_name_start = last_backslash + 1;
+
+	// Initialize output string with Service Name.
+	RtlInitUnicodeString(out_service_name, service_name_start);
+
+	DEBUG("Extracted Service Name: %wZ\n", out_service_name);
+	return STATUS_SUCCESS;
+}
+
+
 /*
  * WinDivert driver entry routine.
  */
@@ -967,12 +991,39 @@ extern NTSTATUS DriverEntry(IN PDRIVER_OBJECT driver_obj,
     RTL_OSVERSIONINFOW version;
     LARGE_INTEGER freq;
     NTSTATUS status;
-    DECLARE_CONST_UNICODE_STRING(device_name,
-        L"\\Device\\" WINDIVERT_DEVICE_NAME);
-    DECLARE_CONST_UNICODE_STRING(dos_device_name,
-        L"\\??\\" WINDIVERT_DEVICE_NAME);
 
-    DEBUG("LOAD: loading WinDivert driver");
+#ifdef WINDIVERT_UNOFFICIAL_SERVICE_NAME
+	UNICODE_STRING service_name = { 0 };
+    status = windivert_get_service_name_from_registry_path(reg_path, &service_name);
+	if (!NT_SUCCESS(status)) {
+		RtlInitUnicodeString(&service_name, WINDIVERT_DEVICE_NAME);
+	}
+    status = RtlUnicodeStringValidate(&service_name);
+    if (!NT_SUCCESS(status))
+    {
+        DEBUG_ERROR("Invalid service name", status);
+        goto driver_entry_exit;
+    }
+
+	UNICODE_STRING device_name, dos_device_name;
+	WCHAR device_name_buf[MAX_PATH + 1], dos_device_name_buf[MAX_PATH + 1];
+	RtlInitEmptyUnicodeString(&device_name, device_name_buf, MAX_PATH * sizeof(WCHAR));
+	RtlInitEmptyUnicodeString(&dos_device_name, dos_device_name_buf, MAX_PATH * sizeof(WCHAR));
+
+	RtlAppendUnicodeToString(&device_name, L"\\Device\\");
+	RtlAppendUnicodeToString(&dos_device_name, L"\\??\\");
+	RtlAppendUnicodeStringToString(&device_name, &service_name);
+	RtlAppendUnicodeStringToString(&dos_device_name, &service_name);
+	DEBUG("LOAD: loading WinDivert driver, service_name=%S, device_name=%S, dos_device_name=%S",
+		service_name.Buffer, device_name.Buffer, dos_device_name.Buffer);
+#else
+	DECLARE_CONST_UNICODE_STRING(device_name,
+		L"\\Device\\" WINDIVERT_DEVICE_NAME);
+	DECLARE_CONST_UNICODE_STRING(dos_device_name,
+		L"\\??\\" WINDIVERT_DEVICE_NAME);
+
+	DEBUG("LOAD: loading WinDivert driver");
+#endif // WINDIVERT_UNOFFICIAL_SERVICE_NAME
 
     // Use the "no execute" pool if available:
     status = RtlGetVersion(&version);

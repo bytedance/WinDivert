@@ -70,6 +70,15 @@ extern "C" {
 /****************************************************************************/
 
 /*
+ * Forks macros
+ */
+#define WINDIVERT_UNOFFICIAL_DISTRIBUTION
+
+#ifdef WINDIVERT_UNOFFICIAL_DISTRIBUTION
+#define WINDIVERT_UNOFFICIAL_SERVICE_NAME
+#endif
+
+/*
  * WinDivert layers.
  */
 typedef enum
@@ -223,6 +232,16 @@ typedef enum
 
 #ifndef WINDIVERT_KERNEL
 
+#ifdef WINDIVERT_UNOFFICIAL_SERVICE_NAME
+/*
+ * Install the WinDivert driver service.
+ */
+WINDIVERTEXPORT BOOLEAN WinDivertInstall(
+	__in LPWSTR service_name,
+	__in LPWSTR service_dependencies
+);
+#endif
+
 /*
  * Open a WinDivert handle.
  */
@@ -232,6 +251,7 @@ WINDIVERTEXPORT HANDLE WinDivertOpen(
     __in        INT16 priority,
     __in        UINT64 flags);
 
+#ifdef WINDIVERT_UNOFFICIAL_SERVICE_NAME
 /*
  * Open a WinDivert handle.
  */
@@ -241,6 +261,7 @@ WINDIVERTEXPORT HANDLE WinDivertOpenEx(
     __in        WINDIVERT_LAYER layer,
     __in        INT16 priority,
     __in        UINT64 flags);
+#endif
 
 /*
  * Receive (read) a packet from a WinDivert handle.

@@ -1,6 +1,7 @@
 LIBRARY WinDivert
 EXPORTS
     WinDivertOpen
+    WinDivertOpenEx
     WinDivertRecv
     WinDivertRecvEx
     WinDivertSend

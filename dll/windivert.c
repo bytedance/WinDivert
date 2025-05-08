@@ -133,7 +133,9 @@ static BOOL WinDivertGetData(const VOID *packet, UINT packet_len, INT min,
  */
 static BOOLEAN WinDivertUse32Bit(void);
 static BOOLEAN WinDivertGetDriverFileName(LPWSTR sys_str);
+#ifndef WINDIVERT_UNOFFICIAL_SERVICE_NAME
 static BOOLEAN WinDivertDriverInstall(VOID);
+#endif
 
 /*
  * Include the helper API implementation.
@@ -291,9 +293,13 @@ static void WinDivertRegisterEventSource(const wchar_t *windivert_sys)
 }
 
 /*
- * Install the WinDivert driver.
+ * Install the WinDivert driver service.
  */
-static BOOLEAN WinDivertDriverInstall(VOID)
+#ifdef WINDIVERT_UNOFFICIAL_SERVICE_NAME
+BOOLEAN WinDivertInstall(LPWSTR service_name, LPWSTR service_dependencies)
+#else
+static BOOLEAN WinDivertDriverInstall(VOID);
+#endif
 {
     DWORD err;
     SC_HANDLE manager = NULL, service = NULL;
@@ -324,7 +330,7 @@ static BOOLEAN WinDivertDriverInstall(VOID)
     }
 
     // Check if the WinDivert service already exists; if so, start it.
-    service = OpenService(manager, WINDIVERT_DEVICE_NAME, SERVICE_ALL_ACCESS);
+    service = OpenService(manager, service_name, SERVICE_ALL_ACCESS);
     if (service != NULL)
     {
         goto WinDivertDriverInstallExit;
@@ -337,15 +343,22 @@ static BOOLEAN WinDivertDriverInstall(VOID)
     }
 
     // Create the service:
-    service = CreateService(manager, WINDIVERT_DEVICE_NAME,
-        WINDIVERT_DEVICE_NAME, SERVICE_ALL_ACCESS, SERVICE_KERNEL_DRIVER,
+#ifdef WINDIVERT_UNOFFICIAL_SERVICE_NAME
+    service = CreateService(manager, service_name,
+        service_name, SERVICE_ALL_ACCESS, SERVICE_KERNEL_DRIVER,
+        SERVICE_DEMAND_START, SERVICE_ERROR_NORMAL, windivert_sys, NULL, NULL,
+        service_dependencies, NULL, NULL);
+#else
+	service = CreateService(manager, WINDIVERT_DEVICE_NAME,
+        service_name, SERVICE_ALL_ACCESS, SERVICE_KERNEL_DRIVER,
         SERVICE_DEMAND_START, SERVICE_ERROR_NORMAL, windivert_sys, NULL, NULL,
         NULL, NULL, NULL);
+#endif
     if (service == NULL)
     {
         if (GetLastError() == ERROR_SERVICE_EXISTS) 
         {
-            service = OpenService(manager, WINDIVERT_DEVICE_NAME,
+            service = OpenService(manager, service_name,
                 SERVICE_ALL_ACCESS);
         }
         goto WinDivertDriverInstallExit;
@@ -451,8 +464,19 @@ static BOOL WinDivertIoControl(HANDLE handle, DWORD code,
 /*
  * Open a WinDivert handle.
  */
-HANDLE WinDivertOpen(const char *filter, WINDIVERT_LAYER layer, INT16 priority,
+HANDLE WinDivertOpen(const char* filter, WINDIVERT_LAYER layer, INT16 priority,
+	UINT64 flags)
+#ifdef WINDIVERT_UNOFFICIAL_SERVICE_NAME
+{
+	return WinDivertOpenEx(NULL, filter, layer, priority, flags);
+}
+
+/*
+ * Open a WinDivert handle.
+ */
+HANDLE WinDivertOpenEx(wchar_t* service_name, const char* filter, WINDIVERT_LAYER layer, INT16 priority,
     UINT64 flags)
+#endif
 {
     WINDIVERT_FILTER *object;
     UINT obj_len;
@@ -527,10 +551,19 @@ HANDLE WinDivertOpen(const char *filter, WINDIVERT_LAYER layer, INT16 priority,
     }
     filter_flags = WinDivertAnalyzeFilter(layer, object, obj_len);
 
+#ifdef WINDIVERT_UNOFFICIAL_SERVICE_NAME
+    LPWSTR windivert_service_name = service_name ? service_name : WINDIVERT_DEVICE_NAME;
+	wchar_t windivert_device_name[MAX_PATH + 1] = L"\\\\.\\";
+	wcscat(windivert_device_name, windivert_service_name);
     // Attempt to open the WinDivert device:
-    handle = CreateFile(L"\\\\.\\" WINDIVERT_DEVICE_NAME,
+    handle = CreateFile(windivert_device_name,
         GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING,
         FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED, INVALID_HANDLE_VALUE);
+#else
+	handle = CreateFile(WINDIVERT_DEVICE_NAME,
+        GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING,
+        FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED, INVALID_HANDLE_VALUE);
+#endif
     if (handle == INVALID_HANDLE_VALUE)
     {
         err = GetLastError();
@@ -549,7 +582,11 @@ HANDLE WinDivertOpen(const char *filter, WINDIVERT_LAYER layer, INT16 priority,
             return INVALID_HANDLE_VALUE;
         }
         SetLastError(0);
-        if (!WinDivertDriverInstall())
+#ifdef WINDIVERT_UNOFFICIAL_SERVICE_NAME
+		if (!WinDivertInstall(windivert_service_name, NULL))
+#else
+		if (!WinDivertDriverInstall())
+#endif
         {
             err = GetLastError();
             err = (err == 0? ERROR_OPEN_FAILED: err);
@@ -557,10 +594,17 @@ HANDLE WinDivertOpen(const char *filter, WINDIVERT_LAYER layer, INT16 priority,
             SetLastError(err);
             return INVALID_HANDLE_VALUE;
         }
-        handle = CreateFile(L"\\\\.\\" WINDIVERT_DEVICE_NAME,
+#ifdef WINDIVERT_UNOFFICIAL_SERVICE_NAME
+        handle = CreateFile(windivert_device_name,
             GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING,
             FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED,
             INVALID_HANDLE_VALUE);
+#else
+        handle = CreateFile(WINDIVERT_DEVICE_NAME,
+            GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING,
+            FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED,
+            INVALID_HANDLE_VALUE);
+#endif
         if (handle == INVALID_HANDLE_VALUE)
         {
             err = GetLastError();
