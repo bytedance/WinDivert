@@ -502,9 +502,15 @@ static void windivert_log_event(PEPROCESS process, PDRIVER_OBJECT driver,
 /*
  * WinDivert provider GUIDs
  */
+#ifdef WINDIVERT_UNOFFICIAL_PROVIDER_GUID
+DEFINE_GUID(WINDIVERT_PROVIDER_GUID,
+	0xC84C7F26, 0x99FA, 0x4A9C,
+	0x9B, 0x6F, 0x52, 0x56, 0x85, 0xCE, 0x43, 0xC9);
+#else
 DEFINE_GUID(WINDIVERT_PROVIDER_GUID,
     0x450EC398, 0x1EAF, 0x49F5,
     0x85, 0xE0, 0x22, 0x8F, 0x0D, 0x29, 0x39, 0x21);
+#endif
 #define WINDIVERT_PROVIDER_NAME WINDIVERT_DEVICE_NAME
 #define WINDIVERT_PROVIDER_DESC WINDIVERT_DEVICE_NAME L" provider"
 
@@ -1483,9 +1489,13 @@ static NTSTATUS windivert_install_provider()
     provider.displayData.name        = WINDIVERT_PROVIDER_NAME;
     provider.displayData.description = WINDIVERT_PROVIDER_DESC;
 
-    // We don't care about the install result as this provider
+    // We don't care about the installation result as this provider
     // is only for passing HLK test.
-    FwpmProviderAdd0(engine_handle, &provider, NULL);
+    status = FwpmProviderAdd0(engine_handle, &provider, NULL);
+    if (!NT_SUCCESS(status))
+    {
+        DEBUG_ERROR("add provider failed", status);
+    }
     return STATUS_SUCCESS;
 }
 
@@ -1498,6 +1508,9 @@ static NTSTATUS windivert_install_sublayer(layer_t layer)
     NTSTATUS status;
 
     RtlZeroMemory(&sublayer, sizeof(sublayer));
+#ifdef WINDIVERT_UNOFFICIAL_PROVIDER_GUID
+	sublayer.providerKey             = &WINDIVERT_PROVIDER_GUID;
+#endif
     sublayer.subLayerKey             = *(layer->sublayer_guid);
     sublayer.displayData.name        = layer->sublayer_name;
     sublayer.displayData.description = layer->sublayer_desc;
