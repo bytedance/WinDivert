@@ -55,6 +55,9 @@
       <AdditionalIncludeDirectories>..\include</AdditionalIncludeDirectories>
     </ClCompile>
   </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="windivert.rc" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <RootNamespace>WinDivert</RootNamespace>
     <ProjectName>WinDivert</ProjectName>
@@ -74,14 +77,25 @@
       <WppEnabled>false</WppEnabled>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;DLL_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
       <EntryPointSymbol>WinDivertDllEntry</EntryPointSymbol>
-      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
-      <IgnoreAllDefaultLibraries>true</IgnoreAllDefaultLibraries>
+      <AdditionalDependencies>ucrt.lib;shlwapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
       <ModuleDefinitionFile>windivert.def</ModuleDefinitionFile>
       <ImportLibrary>WinDivert.lib</ImportLibrary>
+      <SubSystem>Windows</SubSystem>
     </Link>
+    <ResourceCompile>
+      <AdditionalIncludeDirectories>$(OutDir);$(SolutionDir)$(Configuration);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions Condition="Exists('$(OutDir)WinDivert32.sys')">BUILT_WINDIVERT32_SYS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="Exists('$(OutDir)WinDivert64.sys')">BUILT_WINDIVERT64_SYS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="Exists('$(SolutionDir)$(Configuration)\x86\WinDivert.sys')">BUILT_X86_WINDIVERT_SYS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="Exists('$(SolutionDir)$(Configuration)\x64\WinDivert.sys')">BUILT_X64_WINDIVERT_SYS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Platform)'=='Win32'">WANT_WINDIVERT_WOW32;WANT_WINDIVERT_WOW64;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Platform)'=='x64'">WANT_WINDIVERT_WOW64;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
 </Project>

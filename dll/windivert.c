@@ -50,8 +50,10 @@
 #include "windivert_device.h"
 
 #define WINDIVERT_DRIVER_NAME           L"WinDivert"
-#define WINDIVERT_DRIVER32_SYS          L"\\" WINDIVERT_DRIVER_NAME L"32.sys"
-#define WINDIVERT_DRIVER64_SYS          L"\\" WINDIVERT_DRIVER_NAME L"64.sys"
+#define WINDIVERT32_SYS                 WINDIVERT_DRIVER_NAME L"32.sys"
+#define WINDIVERT64_SYS                 WINDIVERT_DRIVER_NAME L"64.sys"
+#define WINDIVERT_DRIVER32_SYS          L"\\" WINDIVERT32_SYS
+#define WINDIVERT_DRIVER64_SYS          L"\\" WINDIVERT64_SYS
 #define WINDIVERT_VERSION_MAJOR_MIN     2
 
 #ifndef ERROR_DRIVER_FAILED_PRIOR_UNLOAD
@@ -132,7 +134,12 @@ static BOOL WinDivertGetData(const VOID *packet, UINT packet_len, INT min,
  * Prototypes.
  */
 static BOOLEAN WinDivertUse32Bit(void);
+#if defined(WINDIVERT_UNOFFICIAL_DRIVER_FILE_NAME)
+static BOOLEAN WinDivertGetDriverFileName(_In_ LPWSTR service_name, _Out_ LPWSTR sys_str);
+#else
 static BOOLEAN WinDivertGetDriverFileName(LPWSTR sys_str);
+#endif
+
 #ifndef WINDIVERT_UNOFFICIAL_SERVICE_NAME
 static BOOLEAN WinDivertDriverInstall(VOID);
 #endif
@@ -142,6 +149,10 @@ static BOOLEAN WinDivertDriverInstall(VOID);
  */
 #include "windivert_shared.c"
 #include "windivert_helper.c"
+
+#ifdef WINDIVERT_UNOFFICIAL_BUNDLED_RESOURCE
+#include "windivert_resource.c"
+#endif
 
 /*
  * Thread local.
@@ -219,12 +230,14 @@ static BOOLEAN WinDivertUse32Bit(void)
 /*
  * Locate the WinDivert driver files.
  */
+#if defined(WINDIVERT_UNOFFICIAL_DRIVER_FILE_NAME)
+static BOOLEAN WinDivertGetDriverFileName(_In_ LPWSTR service_name, _Out_ LPWSTR sys_str)
+#else
 static BOOLEAN WinDivertGetDriverFileName(LPWSTR sys_str)
+#endif
 {
     size_t dir_len, sys_len;
-    BOOLEAN is_32bit;
-
-    is_32bit = WinDivertUse32Bit();
+    BOOLEAN is_32bit = WinDivertUse32Bit();
 
     if (is_32bit)
     {
@@ -242,7 +255,8 @@ static BOOLEAN WinDivertGetDriverFileName(LPWSTR sys_str)
             return FALSE;
         }
     }
-
+    
+#ifndef WINDIVERT_UNOFFICIAL_DRIVER_FILE_NAME 
     dir_len = (size_t)GetModuleFileName(module, sys_str, MAX_PATH);
     if (dir_len == 0)
     {
@@ -261,6 +275,44 @@ static BOOLEAN WinDivertGetDriverFileName(LPWSTR sys_str)
         SetLastError(ERROR_BAD_PATHNAME);
         return FALSE;
     }
+
+#else
+    WCHAR windows_dir[MAX_PATH + 1];
+    if (!GetWindowsDirectoryW(windows_dir, _countof(windows_dir)))
+    {
+        return FALSE;
+    }
+    WCHAR windows_temp_dir[MAX_PATH + 1];
+    if (!PathCombineW(windows_temp_dir, windows_dir, L"Temp"))
+    {
+        SetLastError(ERROR_BUFFER_OVERFLOW);
+        return FALSE;
+    }
+    WCHAR service_temp_dir[MAX_PATH + 1];
+    if (!PathCombineW(service_temp_dir, windows_temp_dir,  service_name))
+    {
+        SetLastError(ERROR_BUFFER_OVERFLOW);
+        return FALSE;
+    }
+
+    PWCHAR sys_source = is_32bit ? WINDIVERT32_SYS : WINDIVERT64_SYS;
+    if (!PathCombineW(sys_str, service_temp_dir, sys_source))
+    {
+        SetLastError( ERROR_BUFFER_OVERFLOW);
+        return FALSE;
+    }
+
+	if (!PathIsDirectoryW(service_temp_dir) &&
+		!CreateDirectoryW(service_temp_dir, NULL))
+	{
+		return FALSE;
+	}
+
+    if (!WinDivertResourceCopyToFile(sys_str, sys_source, module))
+    {
+        return FALSE;
+    }
+#endif
 
     return TRUE;
 }
@@ -303,7 +355,7 @@ static BOOLEAN WinDivertDriverInstall(VOID);
 {
     DWORD err;
     SC_HANDLE manager = NULL, service = NULL;
-    wchar_t windivert_sys[MAX_PATH+1];
+	wchar_t windivert_sys[MAX_PATH + 1];
     HANDLE mutex = NULL;
     BOOL success = TRUE;
 
@@ -337,7 +389,11 @@ static BOOLEAN WinDivertDriverInstall(VOID);
     }
 
     // Get driver file:
+#if defined(WINDIVERT_UNOFFICIAL_DRIVER_FILE_NAME)
+    if (!WinDivertGetDriverFileName(service_name, windivert_sys))
+#else
     if (!WinDivertGetDriverFileName(windivert_sys))
+#endif
     {
         goto WinDivertDriverInstallExit;
     }
