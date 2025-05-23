@@ -515,7 +515,4 @@ FodyWeavers.xsd
 
 /install/
 .env
-
-!scripts/*.exe
-windivert_log.rc
-windivert_log*.bin
+!/scripts/*

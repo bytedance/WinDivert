@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+
+    windivert.unofficial.vcxproj
+    (C) 2025, all rights reserved,
+    
+    This file is part of WinDivert.
+    
+    WinDivert is free software: you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License as published by the
+    Free Software Foundation, either version 3 of the License, or (at your
+    option) any later version.
+    
+    This program is distributed in the hope that it will be useful, but
+    WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+    or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
+    License for more details.
+    
+    You should have received a copy of the GNU Lesser General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    
+    WinDivert is free software; you can redistribute it and/or modify it under
+    the terms of the GNU General Public License as published by the Free
+    Software Foundation; either version 2 of the License, or (at your option)
+    any later version.
+    
+    This program is distributed in the hope that it will be useful, but
+    WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+    or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+    for more details.
+    
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc., 51
+    Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+
+-->
+<Project DefaultTargets="Build" ToolsVersion="15.0"
+  xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <MinimumVisualStudioVersion>12.0</MinimumVisualStudioVersion>
+    <WindowsTargetPlatformVersion>10.0.22000.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Label="Configuration">
+    <CharacterSet>Unicode</CharacterSet>
+    <TargetVersion>Windows7</TargetVersion>
+    <Driver_SpectreMitigation>false</Driver_SpectreMitigation>
+    <EnableInf2cat Condition="'$(ConfigurationType)'=='Driver'">true</EnableInf2cat>
+    <Inf2CatUseLocalTime Condition="'$(ConfigurationType)'=='Driver'">true</Inf2CatUseLocalTime>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)'=='Debug'" Label="Configuration">
+    <UseDebugLibraries>true</UseDebugLibraries>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings" />
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <!-- .vcxproj are using different platform names. -->
+    <WinDivertPlatform Condition="'$(Platform)'=='Win32'">x86</WinDivertPlatform>
+    <WinDivertPlatform Condition="'$(Platform)'=='x64'">x64</WinDivertPlatform>
+    <IntDir>$(SolutionDir)$(Configuration)\$(WinDivertPlatform)\$(ProjectName).$(ConfigurationType)\</IntDir>
+    <OutDir>$(SolutionDir)$(Configuration)\$(WinDivertPlatform)\</OutDir>
+    <OutDir Condition="'$(ConfigurationType)'=='Driver'">$(IntDir)</OutDir>
+    <PackageDir>$(SolutionDir)$(Configuration)\$(WinDivertPlatform)\</PackageDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>include</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <ProgramDatabaseFile>$(PackageDir)$(TargetName)$(TargetExt).pdb</ProgramDatabaseFile>
+      <ImportLibrary Condition="'$(ConfigurationType)'=='DynamicLibrary'">$(PackageDir)$(TargetName).lib</ImportLibrary>
+    </Link>
+    <DriverSign>
+      <FileDigestAlgorithm>sha256</FileDigestAlgorithm>
+    </DriverSign>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)'=='Release'">
+    <ClCompile>
+      <Optimization>MaxSpeed</Optimization>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+    </ClCompile>
+    <Link>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)'=='Debug'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(ConfigurationType)|$(Configuration)'=='DynamicLibrary|Release'">
+    <ClCompile>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(ConfigurationType)|$(Configuration)'=='DynamicLibrary|Debug'">
+    <ClCompile>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(ConfigurationType)|$(Configuration)'=='Driver|Debug'">
+    <ClCompile>
+      <PreprocessorDefinitions>DEBUG_ON;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>DEBUG_ON;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+  </ItemDefinitionGroup>
+</Project>

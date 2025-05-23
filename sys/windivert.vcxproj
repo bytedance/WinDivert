@@ -35,20 +35,10 @@
     
 -->
 <Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <ItemGroup Label="ProjectConfigurations">
-    <ProjectConfiguration Include="Release|Win32">
-      <Configuration>Release</Configuration>
-      <Platform>Win32</Platform>
-    </ProjectConfiguration>
-    <ProjectConfiguration Include="Release|x64">
-      <Configuration>Release</Configuration>
-      <Platform>x64</Platform>
-    </ProjectConfiguration>
-  </ItemGroup>
   <ItemGroup>
     <MessageCompile Include="windivert_log.mc">
-      <RCFilePath>.</RCFilePath>
-      <HeaderFilePath>.</HeaderFilePath>
+      <RCFilePath>$(IntDir)</RCFilePath>
+      <HeaderFilePath>$(IntDir)</HeaderFilePath>
     </MessageCompile>
   </ItemGroup>
   <ItemGroup>
@@ -58,35 +48,36 @@
     <ClCompile Include="windivert.c">
       <TreatWarningAsError>false</TreatWarningAsError>
       <Optimization>MaxSpeed</Optimization>
-      <AdditionalIncludeDirectories>..\include;..\dll;.</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\include;..\dll;$(IntDir)</AdditionalIncludeDirectories>
     </ClCompile>
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
-    <MinimumVisualStudioVersion>12.0</MinimumVisualStudioVersion>
     <RootNamespace>WinDivert</RootNamespace>
     <ProjectName>WinDivert</ProjectName>
     <ProjectGuid>{3F1BF4CC-3CB9-4E71-AF69-5B30B9DA3219}</ProjectGuid>
-    <WindowsTargetPlatformVersion>10.0.22000.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
-  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Label="Configuration">
-    <TargetVersion>Windows7</TargetVersion>
-    <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>WindowsKernelModeDriver10.0</PlatformToolset>
     <ConfigurationType>Driver</ConfigurationType>
     <DriverType>KMDF</DriverType>
     <DriverTargetPlatform>Desktop</DriverTargetPlatform>
     <DebuggerFlavor>DbgengKernelDebugger</DebuggerFlavor>
-    <EnableInf2cat>true</EnableInf2cat>
-    <Inf2CatUseLocalTime>true</Inf2CatUseLocalTime>
   </PropertyGroup>
-  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <PropertyGroup Condition="'$(Configuration)'=='Release'">
+    <SignMode>Off</SignMode>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)'=='Debug'">
+    <SignMode>Test</SignMode>
+    <TestCert>true</TestCert>
+  </PropertyGroup>
+  <Import Project="..\windivert.unofficial.props" />
   <ItemDefinitionGroup>
     <ClCompile>
       <WppEnabled>false</WppEnabled>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">_X86_=1;i386=1;STD_CALL;%(PreprocessorDefinitions);NDIS60;UNICODE;_UNICODE;NDIS_SUPPORT_NDIS60;NT;BINARY_COMPATIBLE=0</PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">_WIN64;_AMD64_;AMD64;%(PreprocessorDefinitions);NDIS60;UNICODE;_UNICODE;NDIS_SUPPORT_NDIS60;NT;BINARY_COMPATIBLE=0</PreprocessorDefinitions>
+      <PreprocessorDefinitions>POOL_ZERO_DOWN_LEVEL_SUPPORT;POOL_NX_OPTIN=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Platform)'=='Win32'">_X86_=1;i386=1;STD_CALL;%(PreprocessorDefinitions);NDIS60;UNICODE;_UNICODE;NDIS_SUPPORT_NDIS60;NT;BINARY_COMPATIBLE=0</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Platform)'=='x64'">_WIN64;_AMD64_;AMD64;%(PreprocessorDefinitions);NDIS60;UNICODE;_UNICODE;NDIS_SUPPORT_NDIS60;NT;BINARY_COMPATIBLE=0</PreprocessorDefinitions>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <TreatWarningAsError>false</TreatWarningAsError>
     </ClCompile>
@@ -94,27 +85,13 @@
       <AdditionalDependencies>%(AdditionalDependencies);$(KernelBufferOverflowLib);$(DDK_LIB_PATH)ntoskrnl.lib;$(DDK_LIB_PATH)hal.lib;$(DDK_LIB_PATH)wmilib.lib;$(KMDF_LIB_PATH)$(KMDF_VER_PATH)\WdfLdr.lib;$(KMDF_LIB_PATH)$(KMDF_VER_PATH)\WdfDriverEntry.lib;$(DDK_LIB_PATH)\wdmsec.lib;$(DDK_LIB_PATH)\ndis.lib;$(DDK_LIB_PATH)\fwpkclnt.lib;$(SDK_LIB_PATH)\uuid.lib</AdditionalDependencies>
     </Link>
     <DriverSign>
-      <FileDigestAlgorithm Condition="'$(Configuration)|$(Platform)'=='Release|x64'">SHA256</FileDigestAlgorithm>
-      <FileDigestAlgorithm Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">SHA256</FileDigestAlgorithm>
+      <FileDigestAlgorithm>SHA256</FileDigestAlgorithm>
     </DriverSign>
   </ItemDefinitionGroup>
-  <ItemGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <Inf Include="../inf/windivert32.inf">
-      <SpecifyArchitecture>true</SpecifyArchitecture>
-      <Architecture>x86</Architecture>
-    </Inf>
-    <FilesToPackage Include="$(TargetPath)" Condition="'$(ConfigurationType)'=='Driver' or '$(ConfigurationType)'=='DynamicLibrary'" />
+  <ItemGroup>
+    <Inf Exclude="@(Inf)" Include="windivert.inf" />
+    <FilesToPackage Include="$(TargetPath)" />
   </ItemGroup>
-  <ItemGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <Inf Include="../inf/windivert64.inf">
-      <SpecifyArchitecture>true</SpecifyArchitecture>
-      <Architecture>amd64</Architecture>
-    </Inf>
-    <FilesToPackage Include="$(TargetPath)" Condition="'$(ConfigurationType)'=='Driver' or '$(ConfigurationType)'=='DynamicLibrary'" />
-  </ItemGroup>
-  <!-- <ItemGroup>
-    <Inf Exclude="@(Inf)" Include="*.inf" />
-    <FilesToPackage Include="$(TargetPath)" Condition="'$(ConfigurationType)'=='Driver' or '$(ConfigurationType)'=='DynamicLibrary'" />
-  </ItemGroup> -->
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets" />
 </Project>

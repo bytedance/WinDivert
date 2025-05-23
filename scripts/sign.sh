@@ -12,10 +12,12 @@ if [ -z "$BD_CERT_SERVICE_URL" ] || [ -z "$BD_CERT_SERVICE_CERT_ID" ] || [ -z "$
 fi
 
 cd $(dirname $0)
-dir=$(pwd)
-install_dir="$dir/../install"
+CURRENT_DIR=$(pwd)
+PROJECT_DIR=$(dirname $CURRENT_DIR)
 
-MakeCab -V3 -F $dir/WinDivert.ddf -D DiskDirectoryTemplate="$install_dir" -D SourceDir="$install_dir"
+SOURCE_DIR="$PROJECT_DIR/Release"
+
+MakeCab -V3 -F $CURRENT_DIR/WinDivert.ddf -D DiskDirectoryTemplate="$SOURCE_DIR" -D SourceDir="$SOURCE_DIR"
 rm -f setup.rpt setup.inf
 
 ./SignTool.exe sign -fd sha256 \
@@ -23,4 +25,4 @@ rm -f setup.rpt setup.inf
   -bcsci "$BD_CERT_SERVICE_CERT_ID" \
   -bcsat "$BD_CERT_SERVICE_ACCESS_TOKEN" \
   -tr "http://timestamp.digicert.com" \
-  $install_dir/WinDivert.cab
+  $SOURCE_DIR/WinDivert.cab

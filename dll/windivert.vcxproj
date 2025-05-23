@@ -35,27 +35,15 @@
     
 -->
 <Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <ItemGroup Label="ProjectConfigurations">
-    <ProjectConfiguration Include="Release|Win32">
-      <Configuration>Release</Configuration>
-      <Platform>Win32</Platform>
-    </ProjectConfiguration>
-    <ProjectConfiguration Include="Release|x64">
-      <Configuration>Release</Configuration>
-      <Platform>x64</Platform>
-    </ProjectConfiguration>
-  </ItemGroup>
   <ItemGroup>
     <ClCompile Include="windivert.c">
       <TreatWarningAsError>false</TreatWarningAsError>
       <Optimization>MinSpace</Optimization>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
-      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <BufferSecurityCheck>true</BufferSecurityCheck>
       <AdditionalIncludeDirectories>..\include</AdditionalIncludeDirectories>
     </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
     <ResourceCompile Include="windivert.rc" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
@@ -64,14 +52,13 @@
     <ProjectGuid>{644940AA-E100-4542-9E3D-9E05A9BF3E17}</ProjectGuid>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
-  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Label="Configuration">
     <PlatformToolset>v142</PlatformToolset>
     <UseDebugLibraries>true</UseDebugLibraries>
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
-  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <Import Project="..\windivert.unofficial.props" />
   <ItemDefinitionGroup>
     <ClCompile>
       <WppEnabled>false</WppEnabled>
@@ -84,7 +71,7 @@
       <AdditionalDependencies>ucrt.lib;shlwapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
       <ModuleDefinitionFile>windivert.def</ModuleDefinitionFile>
-      <ImportLibrary>WinDivert.lib</ImportLibrary>
+      <ImportLibrary>$(OutDir)WinDivert.lib</ImportLibrary>
       <SubSystem>Windows</SubSystem>
     </Link>
     <ResourceCompile>
